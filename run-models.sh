@@ -6,11 +6,16 @@ MAX_MODEL_LEN=2048
 CACHE_SPACE=/root/.cache/huggingface
 RESULTS=$(pwd)/results.txt
 IS_REQUEST_FAILED=false
-VLLM_REGISTRY=na.artifactory.swg-devops.com/sys-linux-power-team-ftp3distro-docker-images-docker-local/vllm
 
-# Please export the creds USERNAME and ARTIFACTORY_TOKEN before running the script 
+# User defined variables
+# Note: Please export the image registry credentials (USERNAME and ARTIFACTORY_TOKEN) before running the script 
+VLLM_IMAGE=${VLLM_IMAGE:-na.artifactory.swg-devops.com/sys-linux-power-team-ftp3distro-docker-images-docker-local/vllm:latest-ubi}
+VLLM_REGISTRY=${VLLM_REGISTRY:-na.artifactory.swg-devops.com/sys-linux-power-team-ftp3distro-docker-images-docker-local/vllm}
+USERNAME=$USERNAME
+ARTIFACTORY_TOKEN=$ARTIFACTORY_TOKEN
+
 # Login to the registry
-echo $ARTIFACTORY_TOKEN | docker $VLLM_REGISTRY --username=$USERNAME --password-stdin
+echo $ARTIFACTORY_TOKEN | docker login $VLLM_REGISTRY --username=$USERNAME --password-stdin
 
 # Models List
 declare -a MODELS=(
@@ -55,7 +60,7 @@ validate_requests() {
 	local request_header="Content-Type: application/json"
     
     validate_status $(curl -s  -o response.txt -w "%{http_code}" \
-        "http://localhost:${PORT}/v1/${request_type}" \
+        "http://localhost:${VLLM_CONTAINER_PORT}/v1/${request_type}" \
          -H "${request_header}" \
          -d '{
              "model": "'"${MODEL}"'",
